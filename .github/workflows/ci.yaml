@@ -1,4 +1,4 @@
-name: CI
+name: ci
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   ci:
-    name: ci | ${{ matrix.go_version }}
+    name: ${{ matrix.go_version }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -53,6 +53,5 @@ jobs:
     - name: Check that all steps completed
       run: |
         [ "${{ needs.ci.result }}" != "success" ] && echo "CI failed." && exit 1;
-
         echo "CI succeeded!";
         exit 0;
