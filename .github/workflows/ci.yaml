@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  ci:
+    name: ci | ${{ matrix.go_version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        go_version: ["1.21"]
+
+    steps:
+    - uses: actions/setup-go@v4
+      with:
+        go-version: ${{ matrix.go_version }}
+    - uses: actions/checkout@v3
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        only-new-issues: true
+
+    - name: Make out dir
+      run: |
+        mkdir out
+
+    - name: Run tests
+      run: |
+        go test -race ./... -coverprofile=out/coverage.txt -covermode=atomic
+
+    - name: Upload coverage
+      uses: codecov/codecov-action@v2
+      with:
+        files: out/coverage.txt
+
+  # Ensures all matrix jobs complete before passing the build
+  complete:
+    name: complete
+    if: ${{ always() }}
+    needs: [ci]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check that all steps completed
+      run: |
+        [ "${{ needs.ci.result }}" != "success" ] && echo "CI failed." && exit 1;
+
+        echo "CI succeeded!";
+        exit 0;
